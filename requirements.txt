@@ -1,3 +1,4 @@
 pandas
 fpdf2
 Flask
+gunicorn

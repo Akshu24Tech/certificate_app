@@ -115,8 +115,8 @@ class CertificateGenerator(FPDF):
 def send_certificate_email(recipient_email, certificate_file, logs):
     """Sends a single certificate email."""
     # IMPORTANT: Update with your email credentials
-    sender_email = "techlearner248@gmail.com"  # <-- REPLACE WITH YOUR EMAIL
-    sender_password = "lxae vrmr mbua rllc" # <-- REPLACE WITH YOUR GMAIL APP PASSWORD
+    sender_email = os.environ.get("techlearner248@gmail.com")  # <-- REPLACE WITH YOUR EMAIL
+    sender_password = os.environ.get("lxae vrmr mbua rllc") # <-- REPLACE WITH YOUR GMAIL APP PASSWORD
     
     msg = MIMEMultipart()
     msg['From'] = sender_email
