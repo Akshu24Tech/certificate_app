@@ -52,6 +52,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'https://certificate-generator-app.onrender.com';
             const dropZone = document.getElementById('drop-zone');
             const fileInput = document.getElementById('file-input');
             const browseBtn = document.getElementById('browse-btn');
@@ -112,7 +113,7 @@
                 formData.append('file', uploadedFile);
 
                 try {
-                    const response = await fetch('/compress', { method: 'POST', body: formData });
+                    const response = await fetch(`${API_BASE_URL}/compress`, { method: 'POST', body: formData });
                     const result = await response.json();
 
                     if (result.status === 'success') {
@@ -134,7 +135,7 @@
                 compressBtn.disabled = true;
 
                 try {
-                    const response = await fetch('/send', { method: 'POST' });
+                    const response = await fetch(`${API_BASE_URL}/send`, { method: 'POST' });
                     const result = await response.json();
 
                     if (result.logs) {
