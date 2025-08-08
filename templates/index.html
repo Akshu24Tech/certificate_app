@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Automation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Certificate Automation ⚙️</h1>
+            <p>Streamline your certificate generation and delivery process.</p>
+        </header>
+
+        <main>
+            <div class="step">
+                <h2>Step 1: Upload CSV</h2>
+                <div id="drop-zone">
+                    <p>Drag & Drop your 'input.csv' file here</p>
+                    <p>or</p>
+                    <button id="browse-btn" class="button-secondary">Browse Files</button>
+                    <input type="file" id="file-input" accept=".csv" hidden>
+                </div>
+                <p id="file-name"></p>
+            </div>
+
+            <div class="step">
+                <h2>Step 2: Process Files</h2>
+                <div class="button-group">
+                    <button id="compress-btn" class="button-primary" disabled>1. Compress CSV</button>
+                    <button id="send-btn" class="button-primary" disabled>2. Generate & Send Certificates</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <h2>Process Log</h2>
+                <div id="log-output">
+                    <p class="placeholder">Waiting for an action...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Built with Python, Flask & ❤️</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const browseBtn = document.getElementById('browse-btn');
+            const compressBtn = document.getElementById('compress-btn');
+            const sendBtn = document.getElementById('send-btn');
+            const logOutput = document.getElementById('log-output');
+            const fileNameDisplay = document.getElementById('file-name');
+
+            let uploadedFile = null;
+
+            // --- File Input Handling ---
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
+            });
+
+            dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]), false);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function handleFile(file) {
+                if (file && file.type === "text/csv") {
+                    uploadedFile = file;
+                    fileNameDisplay.textContent = `Selected file: ${file.name}`;
+                    fileNameDisplay.style.color = '#2ecc71';
+                    compressBtn.disabled = false;
+                    addLog('➡️ CSV file selected. Ready to compress.');
+                } else {
+                    uploadedFile = null;
+                    fileNameDisplay.textContent = 'Invalid file. Please select a .csv file.';
+                    fileNameDisplay.style.color = '#e74c3c';
+                    compressBtn.disabled = true;
+                }
+            }
+
+            // --- Button Click Handling ---
+            compressBtn.addEventListener('click', async () => {
+                if (!uploadedFile) return;
+
+                addLog('⏳ Compressing CSV file...', 'info');
+                compressBtn.disabled = true;
+                sendBtn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('file', uploadedFile);
+
+                try {
+                    const response = await fetch('/compress', { method: 'POST', body: formData });
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        addLog(`✅ ${result.message}`, 'success');
+                        sendBtn.disabled = false; // Enable send button on success
+                    } else {
+                        addLog(`❌ Error: ${result.message}`, 'error');
+                    }
+                } catch (error) {
+                    addLog(`❌ Network or server error: ${error}`, 'error');
+                } finally {
+                    compressBtn.disabled = false; // Re-enable compress button
+                }
+            });
+
+            sendBtn.addEventListener('click', async () => {
+                addLog('⏳ Generating PDFs and sending emails... This may take a while.', 'info');
+                sendBtn.disabled = true;
+                compressBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/send', { method: 'POST' });
+                    const result = await response.json();
+
+                    if (result.logs) {
+                        result.logs.forEach(log => {
+                            if (log.includes('✅') || log.includes('successfully')) {
+                                addLog(log, 'success');
+                            } else if (log.includes('❌') || log.includes('FAILED')) {
+                                addLog(log, 'error');
+                            } else {
+                                addLog(log, 'info');
+                            }
+                        });
+                    }
+                } catch (error) {
+                    addLog(`❌ Network or server error: ${error}`, 'error');
+                } finally {
+                    sendBtn.disabled = false; // Re-enable buttons
+                    compressBtn.disabled = false;
+                }
+            });
+
+            // --- Logging ---
+            function addLog(message, type = 'info') {
+                // Clear placeholder on first log
+                if (document.querySelector('.placeholder')) {
+                    logOutput.innerHTML = '';
+                }
+                const p = document.createElement('p');
+                p.textContent = message;
+                p.className = type;
+                logOutput.appendChild(p);
+                logOutput.scrollTop = logOutput.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
