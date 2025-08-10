@@ -89,10 +89,10 @@ class CertificateGenerator(FPDF):
         self.set_xy(controller_x, signature_y + 35)
         self.cell(50, 9, "Controller of Examinations", align='C')
 
-    def add_text(self, name, designation, sr, program_semester_data):
+    def add_text(self, name, designation, sr, program_semester_data, total_count):
         self.set_font("OpenSans", "", 13)
         self.set_x(10)
-        self.cell(10, 70, f"COE/GUG/2025/209 (1-680)/{sr}", ln=1)
+        self.cell(10, 70, f"COE/GUG/2025/209 ({sr}-{total_count})/{sr}", ln=1)
         self.set_xy(17, 68)
         self.multi_cell(0, 9, f"This is to certify that {name}, {designation} has set the Question Paper for below mentioned Program during May 2025 examinations. The Question Paper was meticulously prepared, keeping in mind the curriculum requirements and other instructions of the University.", align='L')
         
@@ -147,13 +147,13 @@ def generate_and_send_logic():
     logs = []
     try:
         data = pd.read_csv(OUTPUT_CSV_PATH)
+        total_rows = len(data)
         for idx, row in data.iterrows():
             pdf = CertificateGenerator()
             pdf.add_page()
             sr_number = idx + 1
             
-            pdf.add_text(row['Name'], row['Designation'], sr_number, row['Program & Semester'])
-            
+            pdf.add_text(row['Name'], row['Designation'], sr_number, row['Program & Semester'], total_rows)
             person_name = row['Name'].replace(' ', '_').replace('.', '').replace(',', '')
             filename = f"certificate_{person_name}.pdf"
             filepath = os.path.join(CERTIFICATES_DIR, filename)
